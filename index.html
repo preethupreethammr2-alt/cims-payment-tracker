@@ -1,218 +1,344 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <title>CIMS Mess Payment Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIMS Mess Payment Tracker</title>
 
-  <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 1000px;
-      margin: auto;
-      padding: 20px;
-    }
+<style>
+body{
+    font-family: Arial, sans-serif;
+    max-width: 1100px;
+    margin: auto;
+    padding: 20px;
+}
 
-    input,
-    select {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-    }
+h1{
+    color:#0078d4;
+}
 
-    button {
-      padding: 10px 20px;
-      background: #0078d4;
-      color: white;
-      border: none;
-      cursor: pointer;
-      margin-top: 10px;
-    }
+input, select, textarea{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    box-sizing:border-box;
+}
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
+button{
+    padding:10px 20px;
+    background:#0078d4;
+    color:white;
+    border:none;
+    cursor:pointer;
+    margin-top:10px;
+}
 
-    th,
-    td {
-      border: 1px solid #ddd;
-      padding: 10px;
-    }
+button:hover{
+    background:#005fa3;
+}
 
-    th {
-      background: #0078d4;
-      color: white;
-    }
-  </style>
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:10px;
+}
+
+th{
+    background:#0078d4;
+    color:white;
+}
+
+.section{
+    margin-top:25px;
+    padding:15px;
+    border:1px solid #ddd;
+    border-radius:8px;
+}
+</style>
 </head>
 
 <body>
 
-  <h1>CIMS Mess Payment Tracker</h1>
+<h1>CIMS Mess Payment Tracker</h1>
 
-  <label>Month</label>
-  <select id="month">
+<div class="section">
+
+<label><b>Month</b></label>
+<select id="month">
     <option>August</option>
     <option>September</option>
-  </select>
+    <option>October</option>
+    <option>November</option>
+    <option>December</option>
+</select>
 
-  <label>Year of Study</label>
-  <select id="year">
+<label><b>Year of Study</b></label>
+<select id="year">
     <option value="2">2nd Year</option>
     <option value="3">3rd Year</option>
     <option value="4">4th Year</option>
     <option value="5">5th Year</option>
-  </select>
+</select>
 
-  <label>Upload Register Photo</label>
-  <input type="file" id="imageInput" accept="image/*">
+</div>
 
-  <button onclick="processRegister()">
-    Process Register Photo
-  </button>
+<div class="section">
 
-  <h3>Total Records Found: <span id="count">0</span></h3>
+<h2>Upload Register Photo</h2>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Amount</th>
-        <th>UTR</th>
-      </tr>
-    </thead>
+<input type="file" id="imageInput" accept="image/*">
 
-    <tbody id="resultTable"></tbody>
-  </table>
+<button onclick="processRegister()">
+Process Register Photo
+</button>
 
-  <script type="module">
+</div>
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+<div class="section">
 
-    import {
-      getFirestore,
-      collection,
-      addDoc
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<h2>Paste Records Manually</h2>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBZ46_zmsYV3WY1_zjCOcCiWLdxXbb1Yqo",
-      authDomain: "mess-payments.firebaseapp.com",
-      projectId: "mess-payments",
-      storageBucket: "mess-payments.firebasestorage.app",
-      messagingSenderId: "538859877026",
-      appId: "1:538859877026:web:0944e28c9cde244b475dfb",
-      measurementId: "G-25BM66FDMM"
-    };
+<p>Example:</p>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+<pre>
+Preetham 3500 123456789012
+Rahul 3500 987654321345
+Arjun 3500 456789123456
+</pre>
 
-    window.processRegister = async function () {
+<textarea
+id="recordsInput"
+rows="10"
+placeholder="Paste records here..."></textarea>
 
-      const file =
-        document.getElementById("imageInput").files[0];
+<button onclick="saveBulkRecords()">
+Save Pasted Records
+</button>
 
-      if (!file) {
-        alert("Please select a register photo");
-        return;
-      }
+</div>
 
-      alert("OCR is reading the image. Please wait...");
+<div class="section">
 
-      const result =
-        await Tesseract.recognize(file, "eng");
+<h2>Results</h2>
 
-      const text = result.data.text;
+<h3>
+Total Records: <span id="count">0</span>
+</h3>
 
-      console.log(text);
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Amount</th>
+<th>UTR</th>
+<th>Month</th>
+<th>Year</th>
+</tr>
+</thead>
 
-      const lines =
-        text.split("\n")
-          .map(line => line.trim())
-          .filter(line => line.length > 0);
+<tbody id="resultTable"></tbody>
 
-      const month =
-        document.getElementById("month").value;
+</table>
 
-      const year =
-        document.getElementById("year").value;
+</div>
 
-      let records = [];
+<script type="module">
 
-      const utrRegex = /\b\d{12}\b/g;
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-      lines.forEach(line => {
+import {
+getFirestore,
+collection,
+addDoc
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        const utrMatch = line.match(utrRegex);
+const firebaseConfig = {
+apiKey: "AIzaSyBZ46_zmsYV3WY1_zjCOcCiWLdxXbb1Yqo",
+authDomain: "mess-payments.firebaseapp.com",
+projectId: "mess-payments",
+storageBucket: "mess-payments.firebasestorage.app",
+messagingSenderId: "538859877026",
+appId: "1:538859877026:web:0944e28c9cde244b475dfb",
+measurementId: "G-25BM66FDMM"
+};
 
-        if (utrMatch) {
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-          const utr = utrMatch[0];
+window.processRegister = async function(){
 
-          let amount = "";
+const file =
+document.getElementById("imageInput").files[0];
 
-          const amountMatch =
-            line.match(/\b\d{3,5}\b/g);
+if(!file){
+alert("Please select a photo");
+return;
+}
 
-          if (amountMatch) {
-            amount = amountMatch[0];
-          }
+alert("Reading image. Please wait...");
 
-          let name =
-            line
-              .replace(utr, "")
-              .replace(amount, "")
-              .trim();
+const result =
+await Tesseract.recognize(file,"eng");
 
-          records.push({
-            name,
-            amount,
-            utr
-          });
+const text = result.data.text;
 
-        }
-      });
+const lines =
+text.split("\n")
+.map(line => line.trim())
+.filter(line => line.length > 0);
 
-      document.getElementById("count").innerText =
-        records.length;
+const month =
+document.getElementById("month").value;
 
-      const table =
-        document.getElementById("resultTable");
+const year =
+document.getElementById("year").value;
 
-      table.innerHTML = "";
+let count = 0;
 
-      for (const record of records) {
+document.getElementById("resultTable").innerHTML = "";
 
-        table.innerHTML += `
-          <tr>
-            <td>${record.name}</td>
-            <td>${record.amount}</td>
-            <td>${record.utr}</td>
-          </tr>
-        `;
+const utrRegex = /\b\d{12}\b/;
 
-        await addDoc(collection(db, "payments"), {
-          name: record.name,
-          amount: record.amount,
-          utr: record.utr,
-          month: month,
-          year: year,
-          status: "Paid",
-          createdAt: new Date().toISOString()
-        });
-      }
+for(const line of lines){
 
-      alert(records.length + " records saved to Firebase");
+const utrMatch = line.match(utrRegex);
 
-    };
+if(!utrMatch) continue;
 
-  </script>
+const utr = utrMatch[0];
+
+let amount = "";
+
+const amountMatch =
+line.match(/\b\d{3,5}\b/g);
+
+if(amountMatch){
+amount =
+amountMatch.find(x => x !== utr) || amountMatch[0];
+}
+
+let name =
+line.replace(utr,"")
+.replace(amount,"")
+.trim();
+
+document.getElementById("resultTable").innerHTML += `
+<tr>
+<td>${name}</td>
+<td>${amount}</td>
+<td>${utr}</td>
+<td>${month}</td>
+<td>${year}</td>
+</tr>
+`;
+
+await addDoc(
+collection(db,"payments"),
+{
+name,
+amount,
+utr,
+month,
+year,
+status:"Paid",
+createdAt:new Date().toISOString()
+}
+);
+
+count++;
+
+}
+
+document.getElementById("count").innerText = count;
+
+alert(count + " records saved to Firebase");
+
+};
+
+window.saveBulkRecords = async function(){
+
+const month =
+document.getElementById("month").value;
+
+const year =
+document.getElementById("year").value;
+
+const text =
+document.getElementById("recordsInput").value;
+
+if(!text.trim()){
+alert("Paste records first");
+return;
+}
+
+const lines =
+text.split("\n")
+.filter(line => line.trim() !== "");
+
+let saved = 0;
+
+document.getElementById("resultTable").innerHTML = "";
+
+for(const line of lines){
+
+const parts =
+line.trim().split(/\s+/);
+
+if(parts.length < 3)
+continue;
+
+const utr =
+parts[parts.length - 1];
+
+const amount =
+parts[parts.length - 2];
+
+const name =
+parts.slice(0,parts.length - 2).join(" ");
+
+await addDoc(
+collection(db,"payments"),
+{
+name,
+amount,
+utr,
+month,
+year,
+status:"Paid",
+createdAt:new Date().toISOString()
+}
+);
+
+document.getElementById("resultTable").innerHTML += `
+<tr>
+<td>${name}</td>
+<td>${amount}</td>
+<td>${utr}</td>
+<td>${month}</td>
+<td>${year}</td>
+</tr>
+`;
+
+saved++;
+
+}
+
+document.getElementById("count").innerText = saved;
+
+alert(saved + " records saved to Firebase");
+
+};
+
+</script>
 
 </body>
-
 </html>
