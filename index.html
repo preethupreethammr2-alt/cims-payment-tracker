@@ -2,6 +2,33 @@
 <html>
 <head>
   <title>Mess Payment Tracker</title>
+  <label>Month:</label>
+
+<select id="month">
+  <option>August</option>
+  <option>September</option>
+</select>
+
+<br><br>
+
+<label>Year:</label>
+
+<select id="year">
+  <option value="2">2nd Year</option>
+  <option value="3">3rd Year</option>
+  <option value="4">4th Year</option>
+  <option value="5">5th Year</option>
+</select>
+
+<br><br>
+
+<input type="file" id="imageInput" accept="image/*">
+
+<br><br>
+
+<button onclick="processRegister()">
+Process Register
+</button>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
@@ -62,6 +89,28 @@
 </tr>
 <tbody id="payments"></tbody>
 </table>
+  window.processRegister = function() {
+
+  const month =
+    document.getElementById("month").value;
+
+  const year =
+    document.getElementById("year").value;
+
+  const file =
+    document.getElementById("imageInput").files[0];
+
+  if(!file){
+    alert("Select a photo first");
+    return;
+  }
+
+  alert(
+    "Month: " + month +
+    "\nYear: " + year +
+    "\nPhoto: " + file.name
+  );
+}
 
 <script type="module">
 
