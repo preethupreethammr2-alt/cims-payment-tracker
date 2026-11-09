@@ -1,191 +1,218 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>Mess Payment Tracker</title>
-  <label>Month:</label>
-
-<select id="month">
-  <option>August</option>
-  <option>September</option>
-</select>
-
-<br><br>
-
-<label>Year:</label>
-
-<select id="year">
-  <option value="2">2nd Year</option>
-  <option value="3">3rd Year</option>
-  <option value="4">4th Year</option>
-  <option value="5">5th Year</option>
-</select>
-
-<br><br>
-
-<input type="file" id="imageInput" accept="image/*">
-
-<br><br>
-
-<button onclick="processRegister()">
-Process Register
-</button>
+  <title>CIMS Mess Payment Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
+
   <style>
-    body{
-      font-family: Arial,sans-serif;
-      max-width:800px;
-      margin:auto;
-      padding:20px;
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
     }
 
-    input{
-      width:100%;
-      padding:10px;
-      margin:8px 0;
+    input,
+    select {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
     }
 
-    button{
-      padding:10px 20px;
-      background:#0078d4;
-      color:white;
-      border:none;
-      cursor:pointer;
+    button {
+      padding: 10px 20px;
+      background: #0078d4;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
     }
 
-    table{
-      width:100%;
-      border-collapse:collapse;
-      margin-top:20px;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
     }
 
-    th,td{
-      border:1px solid #ddd;
-      padding:10px;
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 10px;
     }
 
-    th{
-      background:#0078d4;
-      color:white;
+    th {
+      background: #0078d4;
+      color: white;
     }
   </style>
 </head>
+
 <body>
 
-<h1>CIMS Mess Payment Tracker</h1>
+  <h1>CIMS Mess Payment Tracker</h1>
 
-<input id="name" placeholder="Student Name">
+  <label>Month</label>
+  <select id="month">
+    <option>August</option>
+    <option>September</option>
+  </select>
 
-<input id="utr" placeholder="UTR Number">
+  <label>Year of Study</label>
+  <select id="year">
+    <option value="2">2nd Year</option>
+    <option value="3">3rd Year</option>
+    <option value="4">4th Year</option>
+    <option value="5">5th Year</option>
+  </select>
 
-<button onclick="savePayment()">Save Payment</button>
+  <label>Upload Register Photo</label>
+  <input type="file" id="imageInput" accept="image/*">
 
-<h3>Total Payments: <span id="count">0</span></h3>
+  <button onclick="processRegister()">
+    Process Register Photo
+  </button>
 
-<table>
-<tr>
-  <th>Name</th>
-  <th>UTR</th>
-</tr>
-<tbody id="payments"></tbody>
-</table>
-  window.processRegister = function() {
+  <h3>Total Records Found: <span id="count">0</span></h3>
 
-  const month =
-    document.getElementById("month").value;
-
-  const year =
-    document.getElementById("year").value;
-
-  const file =
-    document.getElementById("imageInput").files[0];
-
-  if(!file){
-    alert("Select a photo first");
-    return;
-  }
-
-  alert(
-    "Month: " + month +
-    "\nYear: " + year +
-    "\nPhoto: " + file.name
-  );
-}
-
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBZ46_zmsYV3WY1_zjCOcCiWLdxXbb1Yqo",
-  authDomain: "mess-payments.firebaseapp.com",
-  projectId: "mess-payments",
-  storageBucket: "mess-payments.firebasestorage.app",
-  messagingSenderId: "538859877026",
-  appId: "1:538859877026:web:0944e28c9cde244b475dfb",
-  measurementId: "G-25BM66FDMM"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.savePayment = async () => {
-
-  const name = document.getElementById("name").value;
-  const utr = document.getElementById("utr").value;
-
-  if(!name || !utr){
-    alert("Enter Name and UTR");
-    return;
-  }
-
-  await addDoc(collection(db,"payments"),{
-    name:name,
-    utr:utr,
-    createdAt:new Date().toISOString()
-  });
-
-  alert("Saved Successfully");
-
-  loadPayments();
-};
-
-async function loadPayments(){
-
-  const snapshot =
-    await getDocs(collection(db,"payments"));
-
-  document.getElementById("count").innerText =
-    snapshot.size;
-
-  let html="";
-
-  snapshot.forEach(doc=>{
-
-    const data=doc.data();
-
-    html += `
+  <table>
+    <thead>
       <tr>
-        <td>${data.name}</td>
-        <td>${data.utr}</td>
+        <th>Name</th>
+        <th>Amount</th>
+        <th>UTR</th>
       </tr>
-    `;
-  });
+    </thead>
 
-  document.getElementById("payments").innerHTML=html;
-}
+    <tbody id="resultTable"></tbody>
+  </table>
 
-loadPayments();
+  <script type="module">
 
-</script>
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+    import {
+      getFirestore,
+      collection,
+      addDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZ46_zmsYV3WY1_zjCOcCiWLdxXbb1Yqo",
+      authDomain: "mess-payments.firebaseapp.com",
+      projectId: "mess-payments",
+      storageBucket: "mess-payments.firebasestorage.app",
+      messagingSenderId: "538859877026",
+      appId: "1:538859877026:web:0944e28c9cde244b475dfb",
+      measurementId: "G-25BM66FDMM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.processRegister = async function () {
+
+      const file =
+        document.getElementById("imageInput").files[0];
+
+      if (!file) {
+        alert("Please select a register photo");
+        return;
+      }
+
+      alert("OCR is reading the image. Please wait...");
+
+      const result =
+        await Tesseract.recognize(file, "eng");
+
+      const text = result.data.text;
+
+      console.log(text);
+
+      const lines =
+        text.split("\n")
+          .map(line => line.trim())
+          .filter(line => line.length > 0);
+
+      const month =
+        document.getElementById("month").value;
+
+      const year =
+        document.getElementById("year").value;
+
+      let records = [];
+
+      const utrRegex = /\b\d{12}\b/g;
+
+      lines.forEach(line => {
+
+        const utrMatch = line.match(utrRegex);
+
+        if (utrMatch) {
+
+          const utr = utrMatch[0];
+
+          let amount = "";
+
+          const amountMatch =
+            line.match(/\b\d{3,5}\b/g);
+
+          if (amountMatch) {
+            amount = amountMatch[0];
+          }
+
+          let name =
+            line
+              .replace(utr, "")
+              .replace(amount, "")
+              .trim();
+
+          records.push({
+            name,
+            amount,
+            utr
+          });
+
+        }
+      });
+
+      document.getElementById("count").innerText =
+        records.length;
+
+      const table =
+        document.getElementById("resultTable");
+
+      table.innerHTML = "";
+
+      for (const record of records) {
+
+        table.innerHTML += `
+          <tr>
+            <td>${record.name}</td>
+            <td>${record.amount}</td>
+            <td>${record.utr}</td>
+          </tr>
+        `;
+
+        await addDoc(collection(db, "payments"), {
+          name: record.name,
+          amount: record.amount,
+          utr: record.utr,
+          month: month,
+          year: year,
+          status: "Paid",
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      alert(records.length + " records saved to Firebase");
+
+    };
+
+  </script>
 
 </body>
+
 </html>
