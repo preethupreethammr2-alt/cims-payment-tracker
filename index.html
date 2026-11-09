@@ -1,24 +1,142 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>CIMS Payment Tracker</title>
+  <title>Mess Payment Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body{
+      font-family: Arial,sans-serif;
+      max-width:800px;
+      margin:auto;
+      padding:20px;
+    }
+
+    input{
+      width:100%;
+      padding:10px;
+      margin:8px 0;
+    }
+
+    button{
+      padding:10px 20px;
+      background:#0078d4;
+      color:white;
+      border:none;
+      cursor:pointer;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:20px;
+    }
+
+    th,td{
+      border:1px solid #ddd;
+      padding:10px;
+    }
+
+    th{
+      background:#0078d4;
+      color:white;
+    }
+  </style>
 </head>
-
 <body>
-  <h1>CIMS Hostel Payment Tracker</h1>
 
-  <p>Upload a photo of the payment register:</p>
+<h1>CIMS Mess Payment Tracker</h1>
 
-  <input type="file" id="photo">
+<input id="name" placeholder="Student Name">
 
-  <br><br>
+<input id="utr" placeholder="UTR Number">
 
-  <button>Upload</button>
+<button onclick="savePayment()">Save Payment</button>
 
-  <h3>Total Students Paid: 0</h3>
+<h3>Total Payments: <span id="count">0</span></h3>
 
-  <div id="results"></div>
+<table>
+<tr>
+  <th>Name</th>
+  <th>UTR</th>
+</tr>
+<tbody id="payments"></tbody>
+</table>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBZ46_zmsYV3WY1_zjCOcCiWLdxXbb1Yqo",
+  authDomain: "mess-payments.firebaseapp.com",
+  projectId: "mess-payments",
+  storageBucket: "mess-payments.firebasestorage.app",
+  messagingSenderId: "538859877026",
+  appId: "1:538859877026:web:0944e28c9cde244b475dfb",
+  measurementId: "G-25BM66FDMM"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.savePayment = async () => {
+
+  const name = document.getElementById("name").value;
+  const utr = document.getElementById("utr").value;
+
+  if(!name || !utr){
+    alert("Enter Name and UTR");
+    return;
+  }
+
+  await addDoc(collection(db,"payments"),{
+    name:name,
+    utr:utr,
+    createdAt:new Date().toISOString()
+  });
+
+  alert("Saved Successfully");
+
+  loadPayments();
+};
+
+async function loadPayments(){
+
+  const snapshot =
+    await getDocs(collection(db,"payments"));
+
+  document.getElementById("count").innerText =
+    snapshot.size;
+
+  let html="";
+
+  snapshot.forEach(doc=>{
+
+    const data=doc.data();
+
+    html += `
+      <tr>
+        <td>${data.name}</td>
+        <td>${data.utr}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("payments").innerHTML=html;
+}
+
+loadPayments();
+
+</script>
 
 </body>
 </html>
